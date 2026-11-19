@@ -1,0 +1,49 @@
+name: Watch KPJ places
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_notification:
+        description: Send only a test ntfy notification
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kpj-watcher-state
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check availability or send test
+        env:
+          TEST_NOTIFICATION: ${{ inputs.test_notification }}
+        run: |
+          if [ "$TEST_NOTIFICATION" = "true" ]; then
+            python watcher.py --test-notification
+          else
+            python watcher.py
+          fi
+      - name: Persist notification state
+        run: |
+          if ! git diff --quiet -- state.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add state.json
+            git commit -m 'Update watcher notification state [skip ci]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
