@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 PAGE_URL = "https://kinder-jugendheilkunde.meduniwien.ac.at/studium-aus-und-weiterbildung/klinisch-praktisches-jahr-kpj/"
 NTFY_URL = "https://ntfy.sh/kpj-restplatz-1ec30273"
-REMINDER_SECONDS = 4 * 60 * 60
+REMINDER_SECONDS = 55 * 60
 HEARTBEAT_SECONDS = 30 * 24 * 60 * 60
 
 

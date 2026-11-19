@@ -62,6 +62,15 @@ class StateTests(unittest.TestCase):
         self.assertTrue(watcher.next_state(positive, 3, None, 300)[1])
         self.assertTrue(watcher.next_state(positive, 2, None, 200 + watcher.REMINDER_SECONDS)[1])
 
+    def test_hourly_reminder_with_jitter_tolerance(self):
+        positive, _ = watcher.next_state({}, 2, None, 100)
+        for minutes, expected in ((20, False), (40, False), (54, False), (55, True), (59, True), (60, True)):
+            with self.subTest(minutes=minutes):
+                self.assertEqual(watcher.next_state(positive, 2, None, 100 + minutes * 60)[1], expected)
+        reminded, alert = watcher.next_state(positive, 2, None, 100 + 60 * 60)
+        self.assertTrue(alert)
+        self.assertFalse(watcher.next_state(reminded, 2, None, 100 + 80 * 60)[1])
+
     def test_failure_dedupe_and_recovery(self):
         failure, alert = watcher.next_state({}, None, "fetch failed", 100)
         self.assertTrue(alert)

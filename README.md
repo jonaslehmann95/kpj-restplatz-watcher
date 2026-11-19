@@ -14,7 +14,7 @@ checked to send a test message without checking availability or changing state.
 The watcher always runs the code and state from `main`.
 
 Positive counts send a high-priority notification with a link to the page on
-change and then at most once every four hours while unchanged. Zero is silent.
+change and then about hourly while unchanged (55-minute threshold to tolerate cron jitter). Zero is silent.
 Fetch and parse failures send one normal-priority alert per outage;
 successful checks reset failure deduplication. Recovery to a positive count
 alerts immediately. Failed ntfy sends fail the workflow without advancing state,
