@@ -24,6 +24,35 @@ class ParserTests(unittest.TestCase):
 
 
 class StateTests(unittest.TestCase):
+    def test_heartbeat_initializes_existing_and_empty_state(self):
+        for previous, count, error in (({}, 0, None), ({"count": 0}, 0, None), ({"error": "fetch failed"}, None, "fetch failed")):
+            with self.subTest(previous=previous):
+                state, alert = watcher.next_state(previous, count, error, 100)
+                self.assertEqual(state["heartbeat"], 100)
+                self.assertFalse(alert)
+
+    def test_heartbeat_refreshes_monthly_without_changing_alerts(self):
+        start = 100
+        for count, error in ((0, None), (2, None), (None, "fetch failed")):
+            previous, _ = watcher.next_state({}, count, error, start)
+            for elapsed in (watcher.HEARTBEAT_SECONDS - 1, watcher.HEARTBEAT_SECONDS, watcher.HEARTBEAT_SECONDS + 1):
+                with self.subTest(count=count, error=error, elapsed=elapsed):
+                    now = start + elapsed
+                    current = dict(previous, last_alert=now) if count == 2 else previous
+                    state, alert = watcher.next_state(current, count, error, now)
+                    self.assertEqual(state["heartbeat"], start if elapsed < watcher.HEARTBEAT_SECONDS else now)
+                    self.assertEqual(state, dict(current, heartbeat=state["heartbeat"]))
+                    self.assertFalse(alert)
+
+    def test_heartbeat_survives_failure_and_recovery(self):
+        healthy, _ = watcher.next_state({}, 0, None, 100)
+        failed, alert = watcher.next_state(healthy, None, "fetch failed", 200)
+        self.assertTrue(alert)
+        recovered, alert = watcher.next_state(failed, 1, None, 300)
+        self.assertTrue(alert)
+        self.assertEqual(failed["heartbeat"], 100)
+        self.assertEqual(recovered["heartbeat"], 100)
+
     def test_zero_and_positive_changes_and_reminder(self):
         zero, alert = watcher.next_state({}, 0, None, 100)
         self.assertFalse(alert)
