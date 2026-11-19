@@ -23,6 +23,7 @@ so the next run retries. Check Actions for notification or state-push failures.
 `state.json` is committed by the workflow to persist deduplication. Actions needs
 write access to repository contents, and branch rules must allow the bot to push
 state updates to `main`. Serialized watcher runs prevent concurrent state writes.
+A heartbeat in `state.json` refreshes every 30 days, keeping repository activity alive even when availability is unchanged.
 GitHub may disable schedules in inactive public repositories after 60 days;
 re-enable the workflow in Actions if needed.
 

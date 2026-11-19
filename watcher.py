@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 PAGE_URL = "https://kinder-jugendheilkunde.meduniwien.ac.at/studium-aus-und-weiterbildung/klinisch-praktisches-jahr-kpj/"
 NTFY_URL = "https://ntfy.sh/kpj-restplatz-1ec30273"
 REMINDER_SECONDS = 4 * 60 * 60
+HEARTBEAT_SECONDS = 30 * 24 * 60 * 60
 
 
 class PageText(HTMLParser):
@@ -62,13 +63,16 @@ def notify(message, *, urgent=False):
 
 
 def next_state(previous, count, error, now):
+    heartbeat = previous.get("heartbeat")
+    if heartbeat is None or now - heartbeat >= HEARTBEAT_SECONDS:
+        heartbeat = now
     if error:
-        return {"error": error}, not previous.get("error")
+        return {"error": error, "heartbeat": heartbeat}, not previous.get("error")
     alert = count > 0 and (
         previous.get("count") != count
         or now - previous.get("last_alert", 0) >= REMINDER_SECONDS
     )
-    return {"count": count, "last_alert": now if alert else previous.get("last_alert", 0)}, alert
+    return {"count": count, "last_alert": now if alert else previous.get("last_alert", 0), "heartbeat": heartbeat}, alert
 
 
 def main():
