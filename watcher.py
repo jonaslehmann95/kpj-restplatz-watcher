@@ -63,7 +63,7 @@ def notify(message, *, urgent=False):
 
 def next_state(previous, count, error, now):
     if error:
-        return {"error": error}, error != previous.get("error")
+        return {"error": error}, not previous.get("error")
     alert = count > 0 and (
         previous.get("count") != count
         or now - previous.get("last_alert", 0) >= REMINDER_SECONDS
